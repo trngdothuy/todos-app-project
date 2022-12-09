@@ -3,13 +3,12 @@ import { StyleSheet, Text, View, TextInput, Button, SafeAreaView, ImageBackgroun
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useStateWithCallback from 'use-state-with-callback';
 import { SwipeListView } from 'react-native-swipe-list-view';
-
-
+import uuid from 'react-native-uuid';
 
 export default function App () {
   const [todos, setTodos] = useStateWithCallback([], todos => console.log('todos', todos));
   const [newTodo, setNewTodo] = useState([])
-  const [index, setIndex] = useState(-1)
+  const [done, setDone] = useState()
 
   console.log(newTodo)
   // console.log(todos)
@@ -46,89 +45,124 @@ export default function App () {
   }, [todos])
 
  const addTodo = (i) =>{
+  console.log(i);
     if (!todos.includes(newTodo)) {
       // setIndex(index + 1)
-      setTodos([...todos, {key: i, text: newTodo}])
+      setTodos([...todos, {key: uuid.v4(), text: newTodo}])
       setNewTodo('')
       storeTodos(todos)
     } 
   };
 
-  function removeTodo(i) {
-    //debugger
-    const temp = [...todos]
-    temp.splice(i, 1)
-    setTodos([...temp])
-  };
 
-  function showList() {
-    // debugger 
-    return todos && (todos.map((todo, i) => (
-      <TouchableHighlight
-        onPress={() => console.log('You touched me')}
-        style={styles.rowFront}
-        underlayColor={'#AAA'}
-    >
-        <View style={styles.card}>
-        <Text key={i}>{todo.text}</Text>
+  function pressDone(i) {
+    // closeRow(rowMap, rowKey);
+    if (!done) {
+      setDone( {
+      'id': i.key, 
+      'style': {
+        textDecorationLine: 'line-through', 
+        textDecorationStyle: 'solid'}})
+    } else {
+      setDone(null)
+    }
+    
+    // const newData = [...todos];
+    // const prevIndex = todos.findIndex(item => item.key === rowKey);
+    // newData.splice(prevIndex, 1);
+    // setTodos(newData);
+    // <Text style={{textDecorationLine: 'line-through', textDecorationStyle: 'solid'}}>(text)</Text>
+  }
 
-        <Button
-          onPress={() => removeTodo(i)}
-          title="x"
-          backgroundColor='#252525'
-          color="#841584"
-        />
-      </View>
-    </TouchableHighlight>     ) 
-    ))
-  };
+  // function showList() {
+  //   // debugger 
+  //   return todos && (todos.map((todo, i) => (
+  //     <TouchableHighlight
+  //       onPress={() => console.log('You touched me')}
+  //       style={styles.rowFront}
+  //       underlayColor={'#AAA'}
+  //   >
+  //       <View style={styles.card}>
+  //       <Text key={i}>{todo.text}</Text>
 
+  //       <Button
+  //         onPress={() => removeTodo(i)}
+  //         title="x"
+  //         backgroundColor='#252525'
+  //         color="#841584"
+  //       />
+  //     </View>
+  //   </TouchableHighlight>     ) 
+  //   ))
+  // };
+
+  const showList = data => (
+    <TouchableHighlight
+      onPress={() => console.log('You touched me')}
+      style={styles.rowFront}
+      underlayColor={'pink'}
+  >
+          <View style={styles.card}>
+              <Text>{data.item.text}</Text>
+              {/* insert here */}
+              <Button
+        onPress={() => pressDone(data.item.key)}
+        title="x"
+        backgroundColor='#252525'
+        color="#841584"
+      />
+          </View>
+      </TouchableHighlight>
+  );
+
+  const renderHiddenItem = (todos, rowMap) => (
+    <View style={styles.rowBack}>
+        {/* <Text>Left</Text> */}
+        <TouchableOpacity
+            style={[styles.backRightBtn, styles.backRightBtnLeft]}
+            onPress={() => closeRow(rowMap, todos.item.key)}
+        >
+            <Text style={styles.backTextWhite}>Close</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+            style={[styles.backRightBtn, styles.backRightBtnRight]}
+            onPress={() => deleteRow(rowMap, todos.item.key)}
+        >
+            <Text style={styles.backTextWhite}>Delete</Text>
+        </TouchableOpacity>
+    </View>
+);
 
   const closeRow = (rowMap, rowKey) => {
     if (rowMap[rowKey]) {
+  //     console.log('row map', rowMap)
+  // console.log('row key', rowKey)
         rowMap[rowKey].closeRow();
     }
 };
 
 const deleteRow = (rowMap, rowKey) => {
+  // console.log('row map', rowMap)
+  // console.log('row key', rowKey)
     closeRow(rowMap, rowKey);
     const newData = [...todos];
     const prevIndex = todos.findIndex(item => item.key === rowKey);
     newData.splice(prevIndex, 1);
     setTodos(newData);
 };
+  // function removeTodo(i) {
+  //   //debugger
+  //   const temp = [...todos]
+  //   temp.splice(i, 1)
+  //   setTodos([...temp])
+  // };
 
 const onRowDidOpen = rowKey => {
     console.log('This row opened', rowKey);
 };
 
-// const renderItem = todos => (
-//     <TouchableHighlight
-//         onPress={() => console.log('You touched me')}
-//         style={styles.rowFront}
-//         underlayColor={'#AAA'}
-//     >
-//         {showList()}
-//     </TouchableHighlight>
-// );
 
-const renderHiddenItem = (todos, rowMap) => (
-    <View style={styles.rowBack}>
-        <Text>Left</Text>
-        <TouchableOpacity
-            style={[styles.backRightBtn, styles.backRightBtnLeft]}
-            onPress={() => closeRow(rowMap, todos.key)}
-        >
-            <Text style={styles.backTextWhite}>Close</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-            style={[styles.backRightBtn, styles.backRightBtnRight]}
-            onPress={() => deleteRow(rowMap, todos.key)}
-        >
-            <Text style={styles.backTextWhite}>Delete</Text>
-        </TouchableOpacity>
-    </View>
-);
+
 
 
   return <SafeAreaView style={styles.container}> 
@@ -160,7 +194,7 @@ const renderHiddenItem = (todos, rowMap) => (
                 data={todos}
                 renderItem={showList}
                 renderHiddenItem={renderHiddenItem}
-                leftOpenValue={75}
+                leftOpenValue={0}
                 rightOpenValue={-150}
                 previewRowKey={'0'}
                 previewOpenValue={-40}
@@ -238,8 +272,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 5,
-    margin: 2,
+    padding: 10,
+    // margin: 2,
     backgroundColor: 'pink',
     height: 60,
     width:230,
@@ -250,18 +284,22 @@ const styles = StyleSheet.create({
   rowFront: {
     alignItems: 'center',
     backgroundColor: '#CCC',
-    borderBottomColor: 'black',
-    borderBottomWidth: 1,
+    // borderBottomColor: 'black',
+    // borderBottomWidth: 1,
     justifyContent: 'center',
     height: 50,
+    margin: 10,
 },
 rowBack: {
   alignItems: 'center',
-  backgroundColor: '#DDD',
+  // backgroundColor: 'green',
   flex: 1,
   flexDirection: 'row',
   justifyContent: 'space-between',
-  paddingLeft: 15,
+  // paddingLeft: 15,
+  height: 50,
+  margin: 10,
+  // borderBottomWidth: 1,
 },
 backRightBtn: {
   alignItems: 'center',
@@ -272,11 +310,12 @@ backRightBtn: {
   width: 75,
 },
 backRightBtnLeft: {
-  backgroundColor: 'blue',
+  backgroundColor: '#FAEAB1',
   right: 75,
 },
 backRightBtnRight: {
-  backgroundColor: 'red',
+  backgroundColor: '#FAEAB1',
   right: 0,
 },
+
 });

@@ -4,11 +4,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import useStateWithCallback from 'use-state-with-callback';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import uuid from 'react-native-uuid';
+import { Dimensions } from 'react-native';
+
+const windowWidth = Dimensions.get('window').width;
 
 export default function App () {
   const [todos, setTodos] = useStateWithCallback([], todos => console.log('todos', todos));
   const [newTodo, setNewTodo] = useState([])
-  const [done, setDone] = useState()
+  const [done, setDone] = useState({'style': {textDecorationLine: 'none'}})
 
   console.log(newTodo)
   // console.log(todos)
@@ -48,31 +51,42 @@ export default function App () {
   console.log(i);
     if (!todos.includes(newTodo)) {
       // setIndex(index + 1)
-      setTodos([...todos, {key: uuid.v4(), text: newTodo}])
+      setTodos([...todos, {key: uuid.v4(), text: newTodo, style: {textDecorationLine: 'none'}}])
       setNewTodo('')
       storeTodos(todos)
     } 
   };
 
-
   function pressDone(i) {
     // closeRow(rowMap, rowKey);
-    if (!done) {
-      setDone( {
-      'id': i.key, 
-      'style': {
+    // console.log('i',i)
+    // console.log('i.key', i.key)
+    // if (done.id != i) {
+    //   setDone( {
+    //   'id': i, 
+    //   'style': {
+    //     textDecorationLine: 'line-through', 
+    //     textDecorationStyle: 'solid'}})
+    //     console.log('done', done)
+    // } else {
+    //   setDone({'style': {textDecorationLine: 'none'}})
+    //   console.log('done', done)}
+    // }
+    const todos2 = [...todos];
+    let index = todos.findIndex(element => element.key === i)
+    if (todos2[index].style.textDecorationLine === 'none') {
+      todos2[index].style = {
         textDecorationLine: 'line-through', 
-        textDecorationStyle: 'solid'}})
+        textDecorationStyle: 'solid'}
     } else {
-      setDone(null)
+      todos2[index].style = {
+        textDecorationLine: 'none'}
     }
-    
-    // const newData = [...todos];
-    // const prevIndex = todos.findIndex(item => item.key === rowKey);
-    // newData.splice(prevIndex, 1);
-    // setTodos(newData);
+    console.log('todos2 item', todos2[index].style)
+    setTodos(todos2)
     // <Text style={{textDecorationLine: 'line-through', textDecorationStyle: 'solid'}}>(text)</Text>
   }
+  
 
   // function showList() {
   //   // debugger 
@@ -103,11 +117,11 @@ export default function App () {
       underlayColor={'pink'}
   >
           <View style={styles.card}>
-              <Text>{data.item.text}</Text>
+              <Text style={data.item.style}>{data.item.text}</Text>
               {/* insert here */}
               <Button
         onPress={() => pressDone(data.item.key)}
-        title="x"
+        title="✓"
         backgroundColor='#252525'
         color="#841584"
       />
@@ -118,12 +132,12 @@ export default function App () {
   const renderHiddenItem = (todos, rowMap) => (
     <View style={styles.rowBack}>
         {/* <Text>Left</Text> */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
             style={[styles.backRightBtn, styles.backRightBtnLeft]}
             onPress={() => closeRow(rowMap, todos.item.key)}
         >
             <Text style={styles.backTextWhite}>Close</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
             style={[styles.backRightBtn, styles.backRightBtnRight]}
             onPress={() => deleteRow(rowMap, todos.item.key)}
@@ -133,18 +147,22 @@ export default function App () {
     </View>
 );
 
-  const closeRow = (rowMap, rowKey) => {
-    if (rowMap[rowKey]) {
-  //     console.log('row map', rowMap)
-  // console.log('row key', rowKey)
-        rowMap[rowKey].closeRow();
-    }
-};
+//   const closeRow = (rowMap, rowKey) => {
+//     if (rowMap[rowKey]) {
+//   //     console.log('row map', rowMap)
+//   // console.log('row key', rowKey)
+//         rowMap[rowKey].closeRow();
+//     }
+// };
 
 const deleteRow = (rowMap, rowKey) => {
   // console.log('row map', rowMap)
   // console.log('row key', rowKey)
-    closeRow(rowMap, rowKey);
+  if (rowMap[rowKey]) {
+    //     console.log('row map', rowMap)
+    // console.log('row key', rowKey)
+          rowMap[rowKey].closeRow();
+      }
     const newData = [...todos];
     const prevIndex = todos.findIndex(item => item.key === rowKey);
     newData.splice(prevIndex, 1);
@@ -160,9 +178,6 @@ const deleteRow = (rowMap, rowKey) => {
 const onRowDidOpen = rowKey => {
     console.log('This row opened', rowKey);
 };
-
-
-
 
 
   return <SafeAreaView style={styles.container}> 
@@ -195,7 +210,7 @@ const onRowDidOpen = rowKey => {
                 renderItem={showList}
                 renderHiddenItem={renderHiddenItem}
                 leftOpenValue={0}
-                rightOpenValue={-150}
+                rightOpenValue={-80}
                 previewRowKey={'0'}
                 previewOpenValue={-40}
                 previewOpenDelay={3000}
@@ -220,12 +235,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignContent: 'stretch',
-    resizeMode: "cover",
-    width: "100%",
-    height: "100%",
+    resizeMode: 'cover',
+    width: windowWidth,
+    // height: "100%",
   },
   heading: {
-    marginLeft: '18%',
+    marginLeft: '25%',
     marginRight: 60,
     marginBottom: 40,
     marginTop: 20,
@@ -310,12 +325,25 @@ backRightBtn: {
   width: 75,
 },
 backRightBtnLeft: {
-  backgroundColor: '#FAEAB1',
+  backgroundColor: 'pink',
   right: 75,
 },
 backRightBtnRight: {
   backgroundColor: '#FAEAB1',
   right: 0,
+  marginLeft: 5,
+  borderWidth: 2, //width of our border
+  shadowColor: "pink",
+  borderColor: 'pink', //color of our border
+  borderWidth: 2, //width of our border
+  borderRadius: 10,
+  shadowColor: "pink",
+  shadowOpacity: 0.8,
+  shadowRadius: 2,
+  shadowOffset: {
+    height: 1,
+    width: 1,
+  }
 },
 
 });
